@@ -12,6 +12,8 @@ class InvoiceBase(BaseModel):
     invoice_date: Optional[datetime] = None
     supplier_name: Optional[str] = None
     supplier_id: Optional[str] = None
+    supplier_email: Optional[str] = None
+    supplier_electronic_address: Optional[str] = None
     amount_net: Optional[Decimal] = None
     amount_gross: Optional[Decimal] = None
     amount_vat: Optional[Decimal] = None
@@ -35,6 +37,8 @@ class InvoiceUpdate(BaseModel):
     invoice_date: Optional[datetime] = None
     supplier_name: Optional[str] = None
     supplier_id: Optional[str] = None
+    supplier_email: Optional[str] = None
+    supplier_electronic_address: Optional[str] = None
     amount_net: Optional[Decimal] = None
     amount_gross: Optional[Decimal] = None
     amount_vat: Optional[Decimal] = None
@@ -61,6 +65,13 @@ class InvoiceReject(BaseModel):
     rejected_by: str
 
 
+class InvoiceProcess(BaseModel):
+    """Schema for file-watcher process request"""
+    filename: str
+    file_path: str
+    invoice_type: str = "incoming"
+
+
 class Invoice(InvoiceBase):
     """Complete invoice schema"""
     id: int
@@ -72,6 +83,8 @@ class Invoice(InvoiceBase):
     exported_to_accounting: bool
     exported_to_dms: bool
     dms_url: Optional[str] = None
+    processing_error: Optional[str] = None
+    processing_attempts: int = 0
     email_archived_path: Optional[str] = None
     created_at: datetime
     updated_at: datetime

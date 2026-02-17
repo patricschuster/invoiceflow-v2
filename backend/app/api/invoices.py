@@ -18,6 +18,7 @@ from app.schemas.invoice import (
     InvoiceApprove,
     InvoiceReject,
     InvoiceStats,
+    InvoiceProcess,
 )
 from app.services.file_service import FileService
 from app.services.invoice_parser import InvoiceParser
@@ -251,15 +252,31 @@ async def reject_invoice(
     return invoice
 
 
+def _delete_invoice_file(file_path_str: str) -> None:
+    """Delete the physical invoice file from disk. Logs but does not raise on failure."""
+    try:
+        p = Path(file_path_str)
+        if p.exists():
+            p.unlink()
+            logger.info(f"Deleted file: {p}")
+        else:
+            logger.warning(f"File not found during deletion (already gone?): {p}")
+    except Exception as e:
+        logger.error(f"Could not delete file {file_path_str}: {e}")
+
+
 @router.delete("/bulk")
 async def delete_all_invoices(db: Session = Depends(get_db)):
-    """Delete all invoices"""
+    """Delete all invoices and their files"""
 
-    # Get count of invoices to delete
-    count = db.query(Invoice).count()
+    invoices = db.query(Invoice).all()
+    count = len(invoices)
 
     if count == 0:
         return {"message": "No invoices to delete", "deleted_count": 0}
+
+    # Collect file paths before DB deletion
+    file_paths = [inv.file_path for inv in invoices if inv.file_path]
 
     # Create audit log
     audit_log = AuditLog(
@@ -270,22 +287,28 @@ async def delete_all_invoices(db: Session = Depends(get_db)):
     )
     db.add(audit_log)
 
-    # Delete all invoices
+    # Delete DB records
     db.query(Invoice).delete()
     db.commit()
 
-    logger.info(f"Bulk delete: {count} invoices deleted")
+    # Delete files after successful DB commit
+    for fp in file_paths:
+        _delete_invoice_file(fp)
+
+    logger.info(f"Bulk delete: {count} invoices and their files deleted")
 
     return {"message": f"{count} invoices deleted successfully", "deleted_count": count}
 
 
 @router.delete("/{invoice_id}")
 async def delete_invoice(invoice_id: int, db: Session = Depends(get_db)):
-    """Delete an invoice"""
+    """Delete an invoice and its file"""
 
     invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
+
+    file_path = invoice.file_path
 
     # Create audit log before deletion
     audit_log = AuditLog(
@@ -296,6 +319,7 @@ async def delete_invoice(invoice_id: int, db: Session = Depends(get_db)):
             "filename": invoice.filename,
             "invoice_number": invoice.invoice_number,
             "status": invoice.status,
+            "file_path": file_path,
         },
         description=f"Invoice deleted: {invoice.filename}",
     )
@@ -304,7 +328,91 @@ async def delete_invoice(invoice_id: int, db: Session = Depends(get_db)):
     db.delete(invoice)
     db.commit()
 
+    # Delete file after successful DB commit
+    _delete_invoice_file(file_path)
+
     return {"message": "Invoice deleted successfully"}
+
+
+@router.post("/process", response_model=InvoiceSchema)
+async def process_invoice(
+    request: InvoiceProcess,
+    db: Session = Depends(get_db),
+):
+    """
+    Register an invoice file that was already saved to disk (called by file-watcher).
+
+    The file must already exist at the given file_path (inside /data/).
+    Parses the file and creates a pending invoice record.
+    """
+    file_path = Path(request.file_path)
+
+    if not file_path.exists():
+        raise HTTPException(status_code=400, detail=f"File not found: {file_path}")
+
+    # Parse invoice data
+    extraction_status = "not_attempted"
+    extraction_errors = []
+    extracted_data = None
+
+    try:
+        logger.info(f"[process] Parsing file: {file_path}")
+        extracted_data = InvoiceParser.parse_invoice(file_path)
+        extraction_errors = extracted_data.extraction_errors
+
+        if not extraction_errors:
+            extraction_status = "success"
+        elif extracted_data.invoice_number or extracted_data.amount_gross:
+            extraction_status = "partial"
+        else:
+            extraction_status = "failed"
+    except Exception as e:
+        logger.error(f"[process] Extraction failed for {file_path}: {e}")
+        extraction_errors.append(str(e))
+        extraction_status = "failed"
+
+    # Build invoice record
+    invoice_data = {
+        "filename": request.filename,
+        "file_path": str(file_path),
+        "invoice_type": request.invoice_type,
+        "status": "pending",
+    }
+
+    if extracted_data and extraction_status in ("success", "partial"):
+        for field in ("invoice_number", "invoice_date", "supplier_name", "supplier_id",
+                      "supplier_email", "supplier_electronic_address",
+                      "amount_net", "amount_gross", "amount_vat", "currency", "due_date"):
+            value = getattr(extracted_data, field, None)
+            if value is not None:
+                invoice_data[field] = value
+
+    db_invoice = Invoice(**invoice_data)
+    db.add(db_invoice)
+    db.commit()
+    db.refresh(db_invoice)
+
+    # Audit log
+    audit_log = AuditLog(
+        action="imported",
+        entity_type="invoice",
+        entity_id=db_invoice.id,
+        new_values={
+            "filename": request.filename,
+            "file_path": str(file_path),
+            "extraction_status": extraction_status,
+            "extraction_errors": extraction_errors or None,
+        },
+        description=f"Invoice imported by file-watcher: {request.filename} (extraction: {extraction_status})",
+    )
+    db.add(audit_log)
+    db.commit()
+
+    logger.info(
+        f"[process] Invoice created: id={db_invoice.id}, file={request.filename}, "
+        f"extraction={extraction_status}"
+    )
+    return db_invoice
 
 
 @router.post("/upload", response_model=InvoiceSchema)
@@ -379,6 +487,10 @@ async def upload_invoice(
             invoice_data["supplier_name"] = extracted_data.supplier_name
         if extracted_data.supplier_id:
             invoice_data["supplier_id"] = extracted_data.supplier_id
+        if extracted_data.supplier_email:
+            invoice_data["supplier_email"] = extracted_data.supplier_email
+        if extracted_data.supplier_electronic_address:
+            invoice_data["supplier_electronic_address"] = extracted_data.supplier_electronic_address
         if extracted_data.amount_net:
             invoice_data["amount_net"] = extracted_data.amount_net
         if extracted_data.amount_gross:

@@ -21,6 +21,8 @@ class Invoice(Base):
     invoice_date = Column(DateTime(timezone=True))
     supplier_name = Column(String(255))
     supplier_id = Column(String(100))  # Tax ID or vendor number
+    supplier_email = Column(String(255))  # Contact email (DefinedTradeContact)
+    supplier_electronic_address = Column(String(255))  # Electronic address / Peppol ID
 
     # Amounts
     amount_net = Column(Numeric(10, 2))
@@ -45,6 +47,10 @@ class Invoice(Base):
     exported_to_accounting = Column(Boolean, default=False)
     exported_to_dms = Column(Boolean, default=False)
     dms_url = Column(String(500))
+
+    # Processing metadata (used by file-watcher)
+    processing_error = Column(Text, nullable=True)
+    processing_attempts = Column(Integer, default=0)
 
     # Email archiving
     email_archived_path = Column(String(500))

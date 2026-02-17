@@ -22,7 +22,7 @@
               @click="checkPaperless"
               style="cursor: pointer"
             >
-              Paperless-ngx
+              DMS
             </v-chip>
           </template>
         </v-tooltip>
@@ -32,10 +32,11 @@
     <!-- Statistics Cards -->
     <v-row class="mb-6">
       <v-col cols="12" sm="6" md="3">
-        <v-card>
+        <v-card height="100%">
           <v-card-text>
             <div class="text-overline mb-1">Gesamt</div>
             <div class="text-h4 font-weight-bold">{{ stats.total }}</div>
+            <div class="text-caption">&nbsp;</div>
             <v-progress-linear
               color="primary"
               :model-value="100"
@@ -46,7 +47,7 @@
       </v-col>
 
       <v-col cols="12" sm="6" md="3">
-        <v-card>
+        <v-card height="100%">
           <v-card-text>
             <div class="text-overline mb-1">Offen</div>
             <div class="text-h4 font-weight-bold">{{ stats.pending }}</div>
@@ -61,7 +62,7 @@
       </v-col>
 
       <v-col cols="12" sm="6" md="3">
-        <v-card>
+        <v-card height="100%">
           <v-card-text>
             <div class="text-overline mb-1">Freigegeben</div>
             <div class="text-h4 font-weight-bold">{{ stats.approved }}</div>
@@ -76,10 +77,11 @@
       </v-col>
 
       <v-col cols="12" sm="6" md="3">
-        <v-card>
+        <v-card height="100%">
           <v-card-text>
             <div class="text-overline mb-1">Abgelehnt</div>
             <div class="text-h4 font-weight-bold">{{ stats.rejected }}</div>
+            <div class="text-caption">&nbsp;</div>
             <v-progress-linear
               color="error"
               :model-value="stats.total ? (stats.rejected / stats.total * 100) : 0"

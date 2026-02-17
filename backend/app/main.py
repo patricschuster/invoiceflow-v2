@@ -14,6 +14,24 @@ logging.getLogger("app").setLevel(logging.INFO)
 # Create all tables on startup
 Base.metadata.create_all(bind=engine)
 
+# Migrate: add new columns if they don't exist yet (PostgreSQL supports IF NOT EXISTS)
+from sqlalchemy import text as _text
+
+with engine.connect() as _conn:
+    _conn.execute(_text(
+        "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS processing_error TEXT"
+    ))
+    _conn.execute(_text(
+        "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS processing_attempts INTEGER DEFAULT 0"
+    ))
+    _conn.execute(_text(
+        "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS supplier_email VARCHAR(255)"
+    ))
+    _conn.execute(_text(
+        "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS supplier_electronic_address VARCHAR(255)"
+    ))
+    _conn.commit()
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="InvoiceFlow - Automated Invoice Processing System",

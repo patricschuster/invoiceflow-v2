@@ -54,5 +54,21 @@ services:
       - backend
     command: npm run dev -- --host 0.0.0.0 --port 3000
 
+  file-watcher:
+    build:
+      context: ./file-watcher
+      dockerfile: Dockerfile
+    container_name: invoiceflow_watcher
+    environment:
+      API_URL: http://backend:8000
+      WATCH_PATH: /app/data/incoming
+      PROCESSING_PATH: /app/data/processing
+      ERROR_PATH: /app/data/error
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   postgres_data:

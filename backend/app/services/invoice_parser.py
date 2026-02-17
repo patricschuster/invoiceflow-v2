@@ -41,6 +41,8 @@ class InvoiceData:
     due_date: Optional[datetime] = None
     supplier_name: Optional[str] = None
     supplier_id: Optional[str] = None  # Tax ID or vendor number
+    supplier_email: Optional[str] = None  # Contact email (DefinedTradeContact)
+    supplier_electronic_address: Optional[str] = None  # Electronic address (URIUniversalCommunication)
     amount_net: Optional[Decimal] = None
     amount_gross: Optional[Decimal] = None
     amount_vat: Optional[Decimal] = None
@@ -380,6 +382,16 @@ class InvoiceParser:
             if seller_vat:
                 invoice_data.supplier_id = seller_vat[0]
 
+            # Supplier contact email (DefinedTradeContact/EmailURIUniversalCommunication)
+            seller_email = root.xpath('//ram:ApplicableHeaderTradeAgreement/ram:SellerTradeParty/ram:DefinedTradeContact/ram:EmailURIUniversalCommunication/ram:URIID/text()', namespaces=ns)
+            if seller_email:
+                invoice_data.supplier_email = seller_email[0]
+
+            # Supplier electronic address (URIUniversalCommunication)
+            seller_electronic_address = root.xpath('//ram:ApplicableHeaderTradeAgreement/ram:SellerTradeParty/ram:URIUniversalCommunication/ram:URIID/text()', namespaces=ns)
+            if seller_electronic_address:
+                invoice_data.supplier_electronic_address = seller_electronic_address[0]
+
             # Amounts
             amount_gross = root.xpath('//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:GrandTotalAmount/text()', namespaces=ns)
             if amount_gross:
@@ -454,6 +466,16 @@ class InvoiceParser:
             seller_vat = root.xpath('//cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID/text()', namespaces=ns)
             if seller_vat:
                 invoice_data.supplier_id = seller_vat[0]
+
+            # Supplier contact email
+            seller_email = root.xpath('//cac:AccountingSupplierParty/cac:Party/cac:Contact/cbc:ElectronicMail/text()', namespaces=ns)
+            if seller_email:
+                invoice_data.supplier_email = seller_email[0]
+
+            # Supplier electronic address (EndpointID)
+            seller_electronic_address = root.xpath('//cac:AccountingSupplierParty/cac:Party/cbc:EndpointID/text()', namespaces=ns)
+            if seller_electronic_address:
+                invoice_data.supplier_electronic_address = seller_electronic_address[0]
 
             # Amounts
             amount_gross = root.xpath('//cac:LegalMonetaryTotal/cbc:PayableAmount/text()', namespaces=ns)

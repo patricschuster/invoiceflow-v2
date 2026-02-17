@@ -87,6 +87,16 @@
               <div class="text-caption text-grey">Lieferanten-ID</div>
               <div class="text-body-2">{{ invoice.supplier_id || 'N/A' }}</div>
             </div>
+            <div v-if="invoice.supplier_email" class="detail-row">
+              <div class="text-caption text-grey">E-Mail (Kontakt)</div>
+              <div class="text-body-2">
+                <a :href="'mailto:' + invoice.supplier_email">{{ invoice.supplier_email }}</a>
+              </div>
+            </div>
+            <div v-if="invoice.supplier_electronic_address" class="detail-row">
+              <div class="text-caption text-grey">Elektronische Adresse</div>
+              <div class="text-body-2">{{ invoice.supplier_electronic_address }}</div>
+            </div>
             <v-divider class="my-2"></v-divider>
             <div class="detail-row">
               <div class="text-caption text-grey">Nettobetrag</div>
