@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from pathlib import Path
+from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -15,6 +16,10 @@ class Settings(BaseSettings):
     APPROVED_PATH: Path = DATA_PATH / "approved"
     EXPORT_ACCOUNTING_PATH: Path = DATA_PATH / "export" / "accounting"
     EXPORT_DMS_PATH: Path = DATA_PATH / "export" / "dms"
+
+    # Paperless-ngx
+    PAPERLESS_URL: str = "http://paperless:8000"
+    PAPERLESS_TOKEN: Optional[str] = None
 
     # API
     API_V1_PREFIX: str = "/api"

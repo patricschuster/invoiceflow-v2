@@ -103,4 +103,11 @@ export const invoiceAPI = {
   },
 }
 
+// Health / System API
+export const systemAPI = {
+  checkPaperlessStatus() {
+    return axios.get(`${API_URL}/api/health/paperless`)
+  },
+}
+
 export default api

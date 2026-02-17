@@ -21,6 +21,7 @@ from app.schemas.invoice import (
 )
 from app.services.file_service import FileService
 from app.services.invoice_parser import InvoiceParser
+from app.services.export_manager import ExportManager
 from app.config import settings
 
 logger = logging.getLogger(__name__)
@@ -152,13 +153,13 @@ async def update_invoice(
     return invoice
 
 
-@router.post("/{invoice_id}/approve", response_model=InvoiceSchema)
+@router.post("/{invoice_id}/approve")
 async def approve_invoice(
     invoice_id: int,
     approval: InvoiceApprove,
     db: Session = Depends(get_db),
 ):
-    """Approve an invoice"""
+    """Approve an invoice and trigger export to accounting and DMS"""
 
     invoice = db.query(Invoice).filter(Invoice.id == invoice_id).first()
     if not invoice:
@@ -202,7 +203,12 @@ async def approve_invoice(
     db.add(audit_log)
     db.commit()
 
-    return invoice
+    # Export to accounting (Lexware) and DMS (Paperless)
+    export_manager = ExportManager(db)
+    export_results = export_manager.export_invoice(invoice)
+    db.refresh(invoice)
+
+    return {"invoice": InvoiceSchema.model_validate(invoice), "export": export_results}
 
 
 @router.post("/{invoice_id}/reject", response_model=InvoiceSchema)

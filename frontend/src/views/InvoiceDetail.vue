@@ -112,6 +112,59 @@
           </v-card-text>
         </v-card>
 
+        <!-- Export-Status (nur bei freigegebenen Rechnungen) -->
+        <v-card v-if="invoice.status === 'approved'" class="mb-3">
+          <v-card-title class="py-2 px-3">
+            <v-icon icon="mdi-export" size="small" class="mr-2"></v-icon>
+            <span class="text-body-1 font-weight-bold">Export-Status</span>
+          </v-card-title>
+          <v-divider></v-divider>
+          <v-card-text class="pa-2">
+            <v-list density="compact" class="pa-0">
+              <!-- Buchhaltung (Lexware) -->
+              <v-list-item class="px-2">
+                <template v-slot:prepend>
+                  <v-icon
+                    :icon="invoice.exported_to_accounting ? 'mdi-check-circle' : 'mdi-clock-outline'"
+                    :color="invoice.exported_to_accounting ? 'success' : 'grey'"
+                    size="small"
+                  ></v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">Buchhaltung (Lexware)</v-list-item-title>
+                <v-list-item-subtitle class="text-caption">
+                  {{ invoice.exported_to_accounting ? 'Exportiert' : 'Ausstehend' }}
+                </v-list-item-subtitle>
+              </v-list-item>
+
+              <!-- DMS (Paperless) -->
+              <v-list-item class="px-2">
+                <template v-slot:prepend>
+                  <v-icon
+                    :icon="invoice.exported_to_dms ? 'mdi-check-circle' : 'mdi-clock-outline'"
+                    :color="invoice.exported_to_dms ? 'success' : 'grey'"
+                    size="small"
+                  ></v-icon>
+                </template>
+                <v-list-item-title class="text-body-2">DMS (Paperless)</v-list-item-title>
+                <v-list-item-subtitle class="text-caption">
+                  {{ invoice.exported_to_dms ? 'Exportiert' : 'Ausstehend' }}
+                </v-list-item-subtitle>
+                <template v-slot:append>
+                  <v-btn
+                    v-if="invoice.dms_url"
+                    :href="invoice.dms_url"
+                    target="_blank"
+                    icon="mdi-open-in-new"
+                    variant="text"
+                    size="x-small"
+                    density="compact"
+                  ></v-btn>
+                </template>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+        </v-card>
+
         <!-- Freigabe- / Ablehnungs-Information -->
         <v-card v-if="invoice.status !== 'pending'" class="mb-3">
           <v-card-title class="py-2 px-3">

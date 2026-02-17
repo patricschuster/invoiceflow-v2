@@ -1,14 +1,31 @@
 <template>
   <div>
     <!-- Page Header -->
-    <v-row class="mb-4">
+    <v-row class="mb-4" align="center">
       <v-col>
         <h1 class="text-h4 font-weight-bold">
           {{ pageTitle }}
         </h1>
-        <p class="text-subtitle-1 text-grey">
+        <p class="text-subtitle-1 text-grey mb-0">
           Übersicht aller Rechnungen
         </p>
+      </v-col>
+      <v-col cols="auto">
+        <v-tooltip :text="paperlessTooltip" location="bottom">
+          <template v-slot:activator="{ props: tooltipProps }">
+            <v-chip
+              v-bind="tooltipProps"
+              :color="paperlessStatusColor"
+              :prepend-icon="paperlessStatusIcon"
+              size="small"
+              variant="tonal"
+              @click="checkPaperless"
+              style="cursor: pointer"
+            >
+              Paperless-ngx
+            </v-chip>
+          </template>
+        </v-tooltip>
       </v-col>
     </v-row>
 
@@ -239,7 +256,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { invoiceAPI } from '@/services/api'
+import { invoiceAPI, systemAPI } from '@/services/api'
 import InvoiceUploadDialog from '@/components/InvoiceUploadDialog.vue'
 
 const props = defineProps({
@@ -268,6 +285,40 @@ const showDeleteDialog = ref(false)
 const showDeleteAllDialog = ref(false)
 const invoiceToDelete = ref(null)
 const deleting = ref(false)
+
+// Paperless-ngx connection status
+const paperlessStatus = ref(null) // null = loading, true = ok, false = error
+const paperlessUrl = ref('')
+const paperlessError = ref('')
+
+const paperlessStatusColor = computed(() => {
+  if (paperlessStatus.value === null) return 'grey'
+  return paperlessStatus.value ? 'success' : 'error'
+})
+
+const paperlessStatusIcon = computed(() => {
+  if (paperlessStatus.value === null) return 'mdi-cloud-question'
+  return paperlessStatus.value ? 'mdi-cloud-check' : 'mdi-cloud-off'
+})
+
+const paperlessTooltip = computed(() => {
+  if (paperlessStatus.value === null) return 'Verbindungsstatus wird geprüft...'
+  if (paperlessStatus.value) return `Verbunden mit ${paperlessUrl.value}`
+  return `Nicht erreichbar: ${paperlessError.value || paperlessUrl.value}`
+})
+
+const checkPaperless = async () => {
+  paperlessStatus.value = null
+  try {
+    const { data } = await systemAPI.checkPaperlessStatus()
+    paperlessUrl.value = data.url
+    paperlessStatus.value = data.connected
+    paperlessError.value = data.error || ''
+  } catch {
+    paperlessStatus.value = false
+    paperlessError.value = 'API nicht erreichbar'
+  }
+}
 
 const headers = [
   { title: 'Rechnungsnr.', key: 'invoice_number', sortable: true },
@@ -400,6 +451,7 @@ watch(() => route.path, (newPath) => {
 onMounted(() => {
   console.log('[Dashboard] Component mounted, route:', route.path)
   loadInvoices()
+  checkPaperless()
 })
 </script>
 
