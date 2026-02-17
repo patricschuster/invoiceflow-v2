@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose exec backend bash -c \"python -c ''from facturx import get_xml_from_pdf, xml_to_dict; print\\(\"\"Import successful\"\"\\)''\")",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker-compose exec:*)",
+      "Bash(MSYS_NO_PATHCONV=1 docker-compose exec backend python:*)",
+      "Bash(docker-compose logs:*)",
+      "Bash(MSYS_NO_PATHCONV=1 docker-compose exec:*)"
+    ]
+  }
+}
