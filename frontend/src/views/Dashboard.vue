@@ -10,7 +10,18 @@
           Übersicht aller Rechnungen
         </p>
       </v-col>
-      <v-col cols="auto">
+      <v-col cols="auto" class="d-flex align-center gap-2">
+        <!-- Logged-in user chip -->
+        <v-chip
+          prepend-icon="mdi-account-circle"
+          size="small"
+          variant="tonal"
+          color="primary"
+        >
+          {{ currentUsername }}
+        </v-chip>
+
+        <!-- DMS status chip -->
         <v-tooltip :text="paperlessTooltip" location="bottom">
           <template v-slot:activator="{ props: tooltipProps }">
             <v-chip
@@ -259,7 +270,10 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { invoiceAPI, systemAPI } from '@/services/api'
+import { authService } from '@/services/auth'
 import InvoiceUploadDialog from '@/components/InvoiceUploadDialog.vue'
+
+const currentUsername = computed(() => authService.getCurrentUser()?.username || '')
 
 const props = defineProps({
   statusFilter: {

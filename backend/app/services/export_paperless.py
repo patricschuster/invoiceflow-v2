@@ -11,12 +11,24 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
+def _get_paperless_setting(key: str, fallback: str) -> str:
+    """Read a setting from DB, fall back to env var."""
+    try:
+        from app.database import SessionLocal
+        from app.models.setting import Setting
+        with SessionLocal() as db:
+            row = db.query(Setting).filter(Setting.key == key).first()
+            return (row.value or fallback) if row else fallback
+    except Exception:
+        return fallback
+
+
 class PaperlessExporter:
     """Exports approved invoices to Paperless-ngx via API or consumption folder."""
 
     def __init__(self):
-        self.paperless_url = settings.PAPERLESS_URL.rstrip("/")
-        self.paperless_token = settings.PAPERLESS_TOKEN
+        self.paperless_url = _get_paperless_setting("PAPERLESS_URL", settings.PAPERLESS_URL).rstrip("/")
+        self.paperless_token = _get_paperless_setting("PAPERLESS_TOKEN", settings.PAPERLESS_TOKEN or "")
         self.dms_path = settings.EXPORT_DMS_PATH
 
     def export(self, invoice) -> dict:
@@ -28,7 +40,7 @@ class PaperlessExporter:
         Returns:
             dict with keys: success, dms_url (optional), error (on failure)
         """
-        if self.paperless_token:
+        if self.paperless_token and self.paperless_token.strip():
             return self._export_via_api(invoice)
         else:
             return self._export_via_folder(invoice)
@@ -72,6 +84,38 @@ class PaperlessExporter:
             logger.warning(f"Correspondent lookup/create failed for '{name}': {e}")
             return None
 
+    def _get_or_create_custom_field(self, field_name: str, headers: dict) -> int | None:
+        """Look up a Paperless custom field by name, create if not found. Returns integer ID or None."""
+        try:
+            resp = requests.get(
+                f"{self.paperless_url}/api/custom_fields/",
+                headers=headers,
+                timeout=10,
+            )
+            if resp.status_code == 200:
+                for field in resp.json().get("results", []):
+                    if field.get("name", "").lower() == field_name.lower():
+                        logger.info(f"Found existing custom field '{field_name}' with id={field['id']}")
+                        return field["id"]
+
+            # Not found – create as string field
+            resp = requests.post(
+                f"{self.paperless_url}/api/custom_fields/",
+                headers={**headers, "Content-Type": "application/json"},
+                json={"name": field_name, "data_type": "string"},
+                timeout=10,
+            )
+            if resp.status_code in (200, 201):
+                new_id = resp.json().get("id")
+                logger.info(f"Created custom field '{field_name}' with id={new_id}")
+                return new_id
+
+            logger.warning(f"Could not create custom field '{field_name}': {resp.status_code} {resp.text[:200]}")
+            return None
+        except Exception as e:
+            logger.warning(f"Custom field lookup/create failed for '{field_name}': {e}")
+            return None
+
     def _export_via_api(self, invoice) -> dict:
         """Upload document directly to Paperless-ngx via REST API."""
         try:
@@ -109,6 +153,15 @@ class PaperlessExporter:
                     logger.info(f"Using correspondent id={correspondent_id} for '{invoice.supplier_name}'")
                 else:
                     logger.warning(f"No correspondent id resolved for '{invoice.supplier_name}' – field will be empty")
+
+            # Set custom field "Freigegeben von" with the approving user's name
+            if invoice.approved_by:
+                cf_id = self._get_or_create_custom_field("Freigegeben von", headers)
+                if cf_id:
+                    import json as _json
+                    # Paperless post_document expects: {"<field_id>": "<value>"}
+                    data["custom_fields"] = _json.dumps({str(cf_id): invoice.approved_by})
+                    logger.info(f"Setting custom field 'Freigegeben von' = '{invoice.approved_by}' (id={cf_id})")
 
             logger.info(f"post_document data fields: {list(data.keys())}, values: { {k: v for k, v in data.items() if k != 'document'} }")
 

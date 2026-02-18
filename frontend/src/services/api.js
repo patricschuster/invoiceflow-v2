@@ -9,6 +9,28 @@ const api = axios.create({
   },
 })
 
+// Attach JWT token to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('invoiceflow_token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// On 401 → clear storage and redirect to login
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('invoiceflow_token')
+      localStorage.removeItem('invoiceflow_user')
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
 // Invoice API endpoints
 export const invoiceAPI = {
   // Get all invoices

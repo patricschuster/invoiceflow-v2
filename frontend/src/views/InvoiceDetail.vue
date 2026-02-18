@@ -365,14 +365,17 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { invoiceAPI } from '@/services/api'
+import { authService } from '@/services/auth'
 import PdfViewer from '@/components/PdfViewer.vue'
 
 const route = useRoute()
 const router = useRouter()
 
+const currentUsername = authService.getCurrentUser()?.username || 'unknown'
+
 const invoice = ref(null)
 const approvalData = ref({
-  approved_by: 'admin', // TODO: Get from auth
+  approved_by: currentUsername,
   cost_center: '',
   project: '',
   tags: [],
@@ -420,7 +423,7 @@ const rejectInvoice = async () => {
   try {
     await invoiceAPI.rejectInvoice(invoice.value.id, {
       rejection_reason: rejectionReason.value,
-      rejected_by: 'admin' // TODO: Get from auth
+      rejected_by: currentUsername
     })
     showRejectDialog.value = false
     await loadInvoice() // Reload to get updated data

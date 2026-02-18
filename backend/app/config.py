@@ -21,6 +21,11 @@ class Settings(BaseSettings):
     PAPERLESS_URL: str = "http://paperless:8000"
     PAPERLESS_TOKEN: Optional[str] = None
 
+    # JWT Authentication
+    JWT_SECRET_KEY: str = "change-me-in-production-use-a-long-random-string"
+    JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
+
     # API
     API_V1_PREFIX: str = "/api"
     PROJECT_NAME: str = "InvoiceFlow"

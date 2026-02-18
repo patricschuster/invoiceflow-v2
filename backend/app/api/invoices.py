@@ -24,10 +24,15 @@ from app.services.file_service import FileService
 from app.services.invoice_parser import InvoiceParser
 from app.services.export_manager import ExportManager
 from app.config import settings
+from app.core.security import get_current_user
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/invoices", tags=["invoices"])
+router = APIRouter(
+    prefix="/invoices",
+    tags=["invoices"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("/stats", response_model=InvoiceStats)
