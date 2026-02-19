@@ -24,7 +24,7 @@ from app.services.file_service import FileService
 from app.services.invoice_parser import InvoiceParser
 from app.services.export_manager import ExportManager
 from app.config import settings
-from app.core.security import get_current_user
+from app.core.security import get_current_user, verify_watcher_key
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +32,13 @@ router = APIRouter(
     prefix="/invoices",
     tags=["invoices"],
     dependencies=[Depends(get_current_user)],
+)
+
+# Separate router for watcher service calls (API key auth, no JWT required)
+watcher_router = APIRouter(
+    prefix="/invoices",
+    tags=["watcher"],
+    dependencies=[Depends(verify_watcher_key)],
 )
 
 
@@ -339,7 +346,7 @@ async def delete_invoice(invoice_id: int, db: Session = Depends(get_db)):
     return {"message": "Invoice deleted successfully"}
 
 
-@router.post("/process", response_model=InvoiceSchema)
+@watcher_router.post("/process", response_model=InvoiceSchema)
 async def process_invoice(
     request: InvoiceProcess,
     db: Session = Depends(get_db),
@@ -379,6 +386,7 @@ async def process_invoice(
     # Build invoice record
     invoice_data = {
         "filename": request.filename,
+        "original_filename": request.original_filename or request.filename,
         "file_path": str(file_path),
         "invoice_type": request.invoice_type,
         "status": "pending",

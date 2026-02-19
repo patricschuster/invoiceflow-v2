@@ -3,8 +3,8 @@ from typing import Optional
 
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import OAuth2PasswordBearer, APIKeyHeader
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -12,6 +12,7 @@ from app.database import get_db
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+watcher_key_header = APIKeyHeader(name="X-Watcher-Key", auto_error=True)
 
 
 def hash_password(password: str) -> str:
@@ -57,6 +58,15 @@ async def get_current_user(
     if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Benutzer nicht gefunden")
     return user
+
+
+async def verify_watcher_key(api_key: str = Security(watcher_key_header)):
+    if api_key != settings.WATCHER_API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid watcher API key",
+        )
+    return api_key
 
 
 async def get_current_superuser(current_user=Depends(get_current_user)):

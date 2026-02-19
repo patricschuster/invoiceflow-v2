@@ -165,12 +165,13 @@ class PaperlessExporter:
 
             logger.info(f"post_document data fields: {list(data.keys())}, values: { {k: v for k, v in data.items() if k != 'document'} }")
 
+            dms_filename = getattr(invoice, "original_filename", None) or source_path.name
             with open(source_path, "rb") as f:
                 response = requests.post(
                     f"{self.paperless_url}/api/documents/post_document/",
                     headers=headers,
                     data=data,
-                    files={"document": (source_path.name, f, "application/pdf")},
+                    files={"document": (dms_filename, f, "application/pdf")},
                     timeout=30,
                 )
 

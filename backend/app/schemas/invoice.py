@@ -67,7 +67,8 @@ class InvoiceReject(BaseModel):
 
 class InvoiceProcess(BaseModel):
     """Schema for file-watcher process request"""
-    filename: str
+    filename: str                          # disk name (with timestamp prefix)
+    original_filename: Optional[str] = None  # original name from incoming/
     file_path: str
     invoice_type: str = "incoming"
 
@@ -76,6 +77,7 @@ class Invoice(InvoiceBase):
     """Complete invoice schema"""
     id: int
     file_path: str
+    original_filename: Optional[str] = None
     status: str
     rejection_reason: Optional[str] = None
     approved_by: Optional[str] = None

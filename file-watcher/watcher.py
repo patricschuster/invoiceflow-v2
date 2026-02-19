@@ -53,8 +53,8 @@ class InvoiceEventHandler(FileSystemEventHandler):
             shutil.move(str(src), str(dest))
             logger.info(f"Moved to processing: {dest.name}")
 
-            # Call backend
-            PDFProcessor.process(dest)
+            # Call backend (pass original filename for DMS export)
+            PDFProcessor.process(dest, original_filename=src.name)
 
         except Exception as e:
             logger.error(f"Failed to process {src.name}: {e}")

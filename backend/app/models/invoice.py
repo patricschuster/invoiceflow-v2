@@ -12,7 +12,8 @@ class Invoice(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     # File information
-    filename = Column(String(255), nullable=False)
+    filename = Column(String(255), nullable=False)           # disk name (with timestamp prefix)
+    original_filename = Column(String(255), nullable=True)   # original name from incoming/
     file_path = Column(String(500), nullable=False)
     invoice_type = Column(String(50))  # e.g., "incoming", "outgoing", "credit_note"
 

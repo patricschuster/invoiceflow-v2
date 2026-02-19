@@ -28,6 +28,10 @@ services:
       DATA_PATH: /app/data
       PAPERLESS_URL: ${PAPERLESS_URL:-http://paperless:8000}
       PAPERLESS_TOKEN: ${PAPERLESS_TOKEN:-}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me-in-production}
+      WATCHER_API_KEY: ${WATCHER_API_KEY:-change-me-watcher-key}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change-me-admin-password}
     ports:
       - "8000:8000"
     volumes:
@@ -64,6 +68,7 @@ services:
       WATCH_PATH: /app/data/incoming
       PROCESSING_PATH: /app/data/processing
       ERROR_PATH: /app/data/error
+      WATCHER_API_KEY: ${WATCHER_API_KEY:-change-me-watcher-key}
     volumes:
       - ./data:/app/data
     depends_on:

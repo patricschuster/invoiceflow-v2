@@ -3,7 +3,7 @@ from pathlib import Path
 
 import requests
 
-from config import API_URL
+from config import API_URL, WATCHER_API_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ class PDFProcessor:
     ALLOWED_EXTENSIONS = {".pdf", ".xml"}
 
     @staticmethod
-    def process(file_path: Path) -> dict:
+    def process(file_path: Path, original_filename: str = None) -> dict:
         """
         Validate file and notify backend to create invoice record.
 
@@ -50,9 +50,11 @@ class PDFProcessor:
                 f"{API_URL}/api/invoices/process",
                 json={
                     "filename": file_path.name,
+                    "original_filename": original_filename or file_path.name,
                     "file_path": str(file_path),
                     "invoice_type": invoice_type,
                 },
+                headers={"X-Watcher-Key": WATCHER_API_KEY},
                 timeout=60,
             )
         except requests.exceptions.ConnectionError as e:

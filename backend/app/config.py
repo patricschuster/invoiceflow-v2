@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
 
+    # Watcher Service API Key (for file-watcher → backend auth)
+    WATCHER_API_KEY: str = "change-me-watcher-key"
+
+    # Default admin credentials (used on first startup)
+    ADMIN_USERNAME: str = "admin"
+    ADMIN_PASSWORD: str = "change-me-admin-password"
+
     # API
     API_V1_PREFIX: str = "/api"
     PROJECT_NAME: str = "InvoiceFlow"

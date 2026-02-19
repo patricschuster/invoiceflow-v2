@@ -34,6 +34,9 @@ with engine.connect() as _conn:
     _conn.execute(_text(
         "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS supplier_electronic_address VARCHAR(255)"
     ))
+    _conn.execute(_text(
+        "ALTER TABLE invoices ADD COLUMN IF NOT EXISTS original_filename VARCHAR(255)"
+    ))
     _conn.commit()
 
 # Initialize admin user and default settings
@@ -44,10 +47,10 @@ from app.core.security import hash_password as _hash_password
 
 with _SessionLocal() as _db:
     # Create default admin user if not exists
-    if not _db.query(_User).filter(_User.username == "admin").first():
+    if not _db.query(_User).filter(_User.username == settings.ADMIN_USERNAME).first():
         _db.add(_User(
-            username="admin",
-            hashed_password=_hash_password("22822282"),
+            username=settings.ADMIN_USERNAME,
+            hashed_password=_hash_password(settings.ADMIN_PASSWORD),
             is_superuser=True,
             is_active=True,
         ))
@@ -82,6 +85,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(invoices.router, prefix=settings.API_V1_PREFIX)
+app.include_router(invoices.watcher_router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth_router.router)
 app.include_router(admin_router.router)
 
