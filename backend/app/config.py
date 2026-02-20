@@ -42,6 +42,8 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://127.0.0.1:3000",
     ]
+    # Zusätzliche Origins kommasepariert, z.B.: http://192.168.1.10:3000
+    CORS_EXTRA_ORIGINS: str = ""
 
     # File Upload
     MAX_UPLOAD_SIZE: int = 52428800  # 50MB in bytes
