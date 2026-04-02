@@ -29,6 +29,8 @@ class PaperlessExporter:
     def __init__(self):
         self.paperless_url = _get_paperless_setting("PAPERLESS_URL", settings.PAPERLESS_URL).rstrip("/")
         self.paperless_token = _get_paperless_setting("PAPERLESS_TOKEN", settings.PAPERLESS_TOKEN or "")
+        self.correspondent_group_view = _get_paperless_setting("PAPERLESS_CORRESPONDENT_GROUP_VIEW", "")
+        self.correspondent_group_change = _get_paperless_setting("PAPERLESS_CORRESPONDENT_GROUP_CHANGE", "")
         self.dms_path = settings.EXPORT_DMS_PATH
 
     def export(self, invoice) -> dict:
@@ -66,10 +68,18 @@ class PaperlessExporter:
 
             # Not found – create new correspondent
             logger.info(f"Correspondent '{name}' not found, creating...")
+            view_groups = [int(self.correspondent_group_view.strip())] if self.correspondent_group_view.strip() else []
+            change_groups = [int(self.correspondent_group_change.strip())] if self.correspondent_group_change.strip() else []
+            payload = {"name": name}
+            if view_groups or change_groups:
+                payload["set_permissions"] = {
+                    "view": {"users": [], "groups": view_groups},
+                    "change": {"users": [], "groups": change_groups},
+                }
             resp = requests.post(
                 f"{self.paperless_url}/api/correspondents/",
                 headers={**headers, "Content-Type": "application/json"},
-                json={"name": name},
+                json=payload,
                 timeout=10,
             )
             logger.info(f"Correspondent POST status={resp.status_code}, body={resp.text[:200]}")

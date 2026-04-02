@@ -68,6 +68,32 @@
                   class="mb-4"
                 ></v-text-field>
               </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="settingsForm.PAPERLESS_CORRESPONDENT_GROUP_VIEW"
+                  label="Gruppen-ID: Korrespondenten anzeigen"
+                  prepend-inner-icon="mdi-eye-outline"
+                  variant="outlined"
+                  density="comfortable"
+                  hint="Paperless-Gruppe mit Leserecht auf neue Korrespondenten (optional)"
+                  persistent-hint
+                  type="number"
+                  class="mb-4"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-text-field
+                  v-model="settingsForm.PAPERLESS_CORRESPONDENT_GROUP_CHANGE"
+                  label="Gruppen-ID: Korrespondenten bearbeiten"
+                  prepend-inner-icon="mdi-pencil-outline"
+                  variant="outlined"
+                  density="comfortable"
+                  hint="Paperless-Gruppe mit Bearbeitungsrecht auf neue Korrespondenten (optional)"
+                  persistent-hint
+                  type="number"
+                  class="mb-4"
+                ></v-text-field>
+              </v-col>
             </v-row>
 
             <v-alert
@@ -260,7 +286,12 @@ function apiHeaders() {
 const tab = ref('settings')
 
 // ── Settings ──────────────────────────────────────────────────────────────────
-const settingsForm = ref({ PAPERLESS_URL: '', PAPERLESS_TOKEN: '' })
+const settingsForm = ref({
+  PAPERLESS_URL: '',
+  PAPERLESS_TOKEN: '',
+  PAPERLESS_CORRESPONDENT_GROUP_VIEW: '',
+  PAPERLESS_CORRESPONDENT_GROUP_CHANGE: '',
+})
 const showToken = ref(false)
 const savingSettings = ref(false)
 const settingsSaveMsg = ref('')

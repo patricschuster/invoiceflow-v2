@@ -61,6 +61,8 @@ with _SessionLocal() as _db:
     _defaults = [
         ("PAPERLESS_URL", settings.PAPERLESS_URL or "", "URL der Paperless-ngx Instanz"),
         ("PAPERLESS_TOKEN", settings.PAPERLESS_TOKEN or "", "API-Token für Paperless-ngx"),
+        ("PAPERLESS_CORRESPONDENT_GROUP_VIEW", "", "Gruppen-ID für Anzeigen-Recht auf neue Korrespondenten"),
+        ("PAPERLESS_CORRESPONDENT_GROUP_CHANGE", "", "Gruppen-ID für Bearbeiten-Recht auf neue Korrespondenten"),
     ]
     for _key, _val, _desc in _defaults:
         if not _db.query(_Setting).filter(_Setting.key == _key).first():
